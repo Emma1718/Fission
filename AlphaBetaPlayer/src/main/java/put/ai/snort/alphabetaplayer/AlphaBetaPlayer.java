@@ -16,7 +16,7 @@ import put.ai.snort.game.Board;
 import put.ai.snort.game.Move;
 import put.ai.snort.game.Player;
 import put.ai.snort.game.Player.Color;
-import put.ai.snort.fission.*;
+//import put.ai.snort.fission.*;
 
 public class AlphaBetaPlayer extends Player {
 
@@ -52,7 +52,7 @@ public class AlphaBetaPlayer extends Player {
 		Move move = moves.get(1);
 		for (Move m : moves) {
 			b.doMove(m);
-			int rate = alphaBeta(b, 3, -500, 500, Type.MIN);
+			int rate = alphaBeta(b, 5, -500, 500, Type.MIN);
 			b.undoMove(m);
 			if (rate > maximum) {
 				maximum = rate;
@@ -69,7 +69,7 @@ public class AlphaBetaPlayer extends Player {
 	public int rateMove(Board b) {
 		int rate1, rate2, rate;
 		int theSameCol = 0, otherCol = 0;
-		FissionBoard fb = (FissionBoard) b.clone();
+	//	FissionBoard fb = (FissionBoard) b.clone();
 		// FissionMove move = (FissionMove) m;
 		int xi = getStonesAmount(getColor(), b);
 
@@ -145,7 +145,7 @@ public class AlphaBetaPlayer extends Player {
 		return pairs;
 	}
 
-	private boolean isNextToWall(FissionMove m, Board b) {
+	/*private boolean isNextToWall(FissionMove m, Board b) {
 		int x = m.getDstX();
 		int y = m.getDstY();
 		if ((m.getSrcY() == m.getDstY()) && (x == 0 || x == b.getSize() - 1)) {
@@ -161,7 +161,7 @@ public class AlphaBetaPlayer extends Player {
 		}
 		return false;
 	}
-
+*/
 	private int alphaBeta(Board board, int depth, int alpha, int beta, Type type) {
 
 		if (depth == 0)

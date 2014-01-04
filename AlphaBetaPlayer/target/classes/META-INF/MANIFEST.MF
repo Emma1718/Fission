@@ -2,5 +2,5 @@ Manifest-Version: 1.0
 Build-Jdk: 1.7.0_25
 Built-By: Paulina
 Created-By: Maven Integration for Eclipse
-Main-Class: put.ai.snort.MyPlayer.MyPlayer
+Main-Class: put.ai.snort.alphabetaplayer.AlphaBetaPlayer
 
