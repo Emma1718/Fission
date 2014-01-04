@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Built-By: Paulina
+Build-Jdk: 1.7.0_25
+Class-Path: engine-1.0-SNAPSHOT.jar BoardGame-1.0-SNAPSHOT.jar BoardGa
+ meEngine-1.0-SNAPSHOT.jar Fission-1.0-SNAPSHOT.jar commons-collection
+ s-3.2.1.jar
+Main-Class: put.ai.snort.snortgui.MainWindow
+Created-By: Maven Integration for Eclipse
+
