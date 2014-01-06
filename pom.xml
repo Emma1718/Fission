@@ -26,6 +26,7 @@
         <module>NastyPlayer</module>
 	<module>MyPlayer</module>
 	<module>AlphaBetaPlayer</module>
+	<module>AlphaBetaTTPlayer</module>
         <module>SnortCLI</module>
         <module>SnortGUI</module>
     <module>BoardGameEngine</module>

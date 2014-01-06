@@ -21,7 +21,11 @@
             <artifactId>BoardGame</artifactId>
             <version>${project.version}</version>
         </dependency>
-	
+	 <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>Fission</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

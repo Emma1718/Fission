@@ -16,7 +16,8 @@ import put.ai.snort.game.Board;
 import put.ai.snort.game.Move;
 import put.ai.snort.game.Player;
 import put.ai.snort.game.Player.Color;
-//import put.ai.snort.fission.*;
+
+import put.ai.snort.fission.*;
 
 public class AlphaBetaPlayer extends Player {
 
@@ -48,12 +49,14 @@ public class AlphaBetaPlayer extends Player {
 
 		List<Move> moves = b.getMovesFor(getColor());
 		int i = 0;
-		int maximum = -15, chosen = 0;
+		int maximum = -500, chosen = 0, ocena;
 		Move move = moves.get(1);
+		Board board = b.clone();
 		for (Move m : moves) {
-			b.doMove(m);
-			int rate = alphaBeta(b, 5, -500, 500, Type.MIN);
-			b.undoMove(m);
+			board.doMove(m);
+			int rate = alphaBeta(board, 3, -500, 500, Type.MIN);
+
+			board.undoMove(m);
 			if (rate > maximum) {
 				maximum = rate;
 				move = m;
@@ -62,6 +65,17 @@ public class AlphaBetaPlayer extends Player {
 			i++;
 		}
 
+		// System.out.println("FRom: " + ((FissionMove)move).getSrcX() +" " +
+		// ((FissionMove)move).getSrcY() );
+		// System.out.println("FRom: " + ((FissionMove)move).getDstX() +" " +
+		// ((FissionMove)move).getDstY() );
+
+		Board b2 = board.clone();
+		b2.doMove(move);
+		System.out.println("---------");
+		ocena = rateMove(b2);
+		System.out.println("Move no. " + chosen + " ocena: " + ocena);
+		b2.undoMove(move);
 		System.out.println("Wybrany ruch: " + chosen + " Ocena: " + maximum);
 		return move;
 	}
@@ -69,49 +83,43 @@ public class AlphaBetaPlayer extends Player {
 	public int rateMove(Board b) {
 		int rate1, rate2, rate;
 		int theSameCol = 0, otherCol = 0;
-	//	FissionBoard fb = (FissionBoard) b.clone();
+		// FissionBoard fb = (FissionBoard) b.clone();
 		// FissionMove move = (FissionMove) m;
 		int xi = getStonesAmount(getColor(), b);
 
 		int yi = getStonesAmount(Player.getOpponent(getColor()), b);
 		rate1 = xi - yi;
-		rate1 *= 2;
-		int zi = getNeighbours(getColor(), b);
-		int vi = getNeighbours(getOpponent(getColor()), b);
-		rate2 = vi - zi;
-		
-		rate = rate1 + rate2;
-		
-
-		// System.out.println("Fission: " + (xi - yi));//
-		// System.out
-		// .println("Usunięte: " + ((FissionMove) m).getRemoved().size());
-		// System.out.println("Polozenie: " + ((FissionMove) m).getDstX() + "  "
-		// + ((FissionMove) m).getDstY());
+		if (yi == 0)
+			rate1++;
+		if (rate1 == 0) {
+			int zi = getNeighbours(getColor(), b);
+			// System.out.println("Neighbour1 " + zi);
+			int vi = getNeighbours(getOpponent(getColor()), b);
+			// System.out.println("Neighbour2 " + vi);
+			rate2 = vi - zi;
+			rate1 = rate2;
+		}
 		/*
-		 * if (isNextToWall(move, fb)) { for (int i = -1; i <= 1; ++i) { for
-		 * (int j = -1; j <= 1; ++j) { int x = move.getDstX() + i; int y =
-		 * move.getDstY() + j; Color c = b.getState(x, y); if (c == getColor())
-		 * { theSameCol++; // System.out // .println("Ten sam kolor x: " + x +
-		 * " y: " + y); } else if (c == Player.getOpponent(getColor())) {
-		 * otherCol++; }
+		 * rate1 *= 2; int vi = getNeighbours(getOpponent(getColor()), b); rate2
+		 * = vi - zi;
 		 * 
-		 * } } if ((move.getDstX() == 0 && move.getDstY() == 0) ||
-		 * (move.getDstX() == 0 && move.getDstY() == b.getSize() - 1) ||
-		 * (move.getDstX() == b.getSize() - 1 && move.getDstY() == 0) ||
-		 * (move.getDstX() == b.getSize() - 1 && move.getDstY() == b .getSize()
-		 * - 1)) { rate = -1;
-		 * 
-		 * }
-		 * 
-		 * }
+		 * rate = rate1 + rate2;
 		 */
+		return rate1;
 
-		/*
-		 * if (theSameCol > 1) rate -= 1; if (otherCol > 0) rate += 1;
-		 */
-		return rate;
+	}
 
+	private boolean isTerminalState(Board b) {
+		if (getStonesAmount(getColor(), b) > 0
+				&& getStonesAmount(Player.getOpponent(getColor()), b) == 0)
+			return true;
+		if (getStonesAmount(getColor(), b) == 1
+				&& getStonesAmount(getColor(), b) == getStonesAmount(
+						getOpponent(getColor()), b))
+
+			return true;
+
+		return false;
 	}
 
 	private int getStonesAmount(Color c, Board b) {
@@ -126,45 +134,176 @@ public class AlphaBetaPlayer extends Player {
 		return n;
 	}
 
-	private int getNeighbours(Color c, Board b) {
-		int pairs = 0;
-		for (int i = 0; i < b.getSize(); ++i) {
-			for (int j = 0; j < b.getSize(); ++j) {
+	private int countDanger(Color c, Board b) {
+		int opp = 0, emp = 0, same = 0;
+		for (int i = 0; i < b.getSize(); i++) {
+			for (int j = 0; j < b.getSize(); j++) {
 				if (b.getState(i, j) == c) {
+					// System.out.println("Coords of player: "+ c.toString() +
+					// " " +i +" " + j);
 					for (int z = -1; z <= 1; ++z) {
 						for (int v = -1; v <= 1; ++v) {
-							if ((b.getState(i + z, j + v) == c) && ((z != 0)
-									|| (v != 0))) {
-								pairs++;
+							if (b.getState(i + z, j + v) == c) {
+								same++;
+							} else if (b.getState(i + z, j + v) == getOpponent(c))
+								opp++;
+							else if(i+z >=0 && i+z<b.getSize() && j+v >=0 && j+v < b.getSize())
+								emp++;
+						}
+					}
+				}
+			}
+		}
+		if(opp == same-1) return emp;
+		else return opp-same+1;
+	}
+
+	private int getNeighbours(Color c, Board b) {
+		int pairs1 = 0, pairs2 = 0, threats = 0;
+		for (int i = 0; i < b.getSize(); i++) {
+			for (int j = 0; j < b.getSize(); j++) {
+				if (b.getState(i, j) == c) {
+					// System.out.println("Coords of player: "+ c.toString() +
+					// " " +i +" " + j);
+					for (int z = -1; z <= 1; ++z) {
+						for (int v = -1; v <= 1; ++v) {
+							if ((b.getState(i + z, j + v) == Color.EMPTY)
+									&& (i + z >= 0 && i + z < b.getSize()
+											&& j + v >= 0 && j + v < b
+											.getSize())) {
+								for (int k = -1; k <= 1; ++k) {
+									for (int l = -1; l <= 1; ++l) {
+										if ((b.getState(i + z + k, j + v + l) == c))
+											pairs1++;
+										if ((b.getState(i + z + k, j + v + l) == getOpponent(c)))
+											pairs2++;
+									}
+								}
+								pairs1--;
+								if (pairs1 - pairs2 > 0)
+									threats += ((pairs1 - pairs2) * canBeCrash(
+											i + z, j + v, b, c));
+								pairs1 = pairs2 = 0;
 							}
 						}
 					}
 				}
 			}
 		}
-		return pairs;
+		return threats;
 	}
 
-	/*private boolean isNextToWall(FissionMove m, Board b) {
-		int x = m.getDstX();
-		int y = m.getDstY();
-		if ((m.getSrcY() == m.getDstY()) && (x == 0 || x == b.getSize() - 1)) {
-			return true;
+	private int canBeCrash(int x, int y, Board b, Color c) {
+
+		int threatsDiag1 = 0, threatsDiag2 = 0, threatsHor = 0, threatsVer = 0;
+		int z;
+		int v;
+
+		// 1
+		if (b.getState(x - 1, y - 1) != Color.EMPTY) {
+			z = x;
+			v = y;
+			while (++z < b.getSize() && ++v < b.getSize()) {
+				if (b.getState(z, v) == getOpponent(c)) {
+					threatsDiag1++;
+					break;
+				} else if (b.getState(z, v) == c)
+					break;
+			}
 		}
-		if ((m.getSrcX() == m.getDstX()) && (y == 0 || y == b.getSize() - 1)) {
-			return true;
+		// 2
+		if (b.getState(x, y - 1) != Color.EMPTY) {
+			z = x;
+			v = y;
+			while (++v < b.getSize()) {
+				if (b.getState(z, v) == getOpponent(c)) {
+					threatsVer++;
+					break;
+				} else if (b.getState(z, v) == c)
+					break;
+			}
 		}
-		if ((!(m.getSrcY() == m.getDstY()) && !(m.getSrcX() == m.getDstX()))
-				&& (x == 0 || y == 0 || x == b.getSize() - 1 || y == b
-						.getSize() - 1)) {
-			return true;
+		// 3
+		if (b.getState(x + 1, y - 1) != Color.EMPTY) {
+			z = x;
+			v = y;
+			while (--z >= 0 && ++v < b.getSize()) {
+				if (b.getState(z, v) == getOpponent(c)) {
+					threatsDiag2++;
+					break;
+				} else if (b.getState(z, v) == c)
+					break;
+			}
 		}
-		return false;
+		// 4
+		if (b.getState(x + 1, y) != Color.EMPTY) {
+			z = x;
+			v = y;
+			while (--z >= 0) {
+				if (b.getState(z, v) == getOpponent(c)) {
+					threatsVer++;
+					break;
+				} else if (b.getState(z, v) == c)
+					break;
+			}
+		}
+		// 5
+		if (threatsDiag1 == 0 && b.getState(x + 1, y + 1) != Color.EMPTY) {
+			z = x;
+			v = y;
+			while (--z >= 0 && --v >= 0) {
+				if (b.getState(z, v) == getOpponent(c)) {
+					threatsDiag1++;
+					break;
+				} else if (b.getState(z, v) == c)
+					break;
+			}
+		}
+		// 6
+		if (threatsVer == 0 && b.getState(x, y + 1) != Color.EMPTY) {
+			z = x;
+			v = y;
+			while (--v >= 0) {
+				if (b.getState(z, v) == getOpponent(c)) {
+					threatsVer++;
+					break;
+				} else if (b.getState(z, v) == c)
+					break;
+			}
+		}
+
+		// 7
+		if (threatsDiag2 == 0 && b.getState(x - 1, y + 1) != Color.EMPTY) {
+			z = x;
+			v = y;
+			while (++z < b.getSize() && --v >= 0) {
+				if (b.getState(z, v) == getOpponent(c)) {
+					threatsDiag2++;
+					break;
+				} else if (b.getState(z, v) == c)
+					break;
+			}
+		}
+		// 8
+		if (threatsHor == 0 && b.getState(x - 1, y) != Color.EMPTY) {
+			z = x;
+			v = y;
+			while (++z < b.getSize()) {
+				if (b.getState(z, v) == getOpponent(c)) {
+					threatsHor++;
+					break;
+				} else if (b.getState(z, v) == c)
+					break;
+			}
+		}
+		// System.out.println("number of threats: " + threats
+		// + " coords of empty: " + x + " " + y);
+		return (threatsDiag1 + threatsDiag2 + threatsHor + threatsVer);
 	}
-*/
+
 	private int alphaBeta(Board board, int depth, int alpha, int beta, Type type) {
 
-		if (depth == 0)
+		if (depth == 0 || isTerminalState(board))
 			return (rateMove(board));
 		if (type == Type.MAX) {
 			for (Move m : board.getMovesFor(getColor())) {
@@ -188,6 +327,25 @@ public class AlphaBetaPlayer extends Player {
 			return beta;
 
 		}
+
+	}
+
+	private int alphaBetaNMax(Board board, int depth, int alpha, int beta) {
+
+		if (depth == 0)
+			return (-rateMove(board));
+
+		for (Move m : board.getMovesFor(getColor())) {
+			board.doMove(m);
+			int val = -alphaBetaNMax(board, depth - 1, -beta, -alpha);
+			board.undoMove(m);
+			// alpha = Math.max(val, alpha);
+			if (val > alpha)
+				alpha = val;
+			if (alpha >= beta)
+				return beta; // cutoff
+		}
+		return alpha;
 
 	}
 
